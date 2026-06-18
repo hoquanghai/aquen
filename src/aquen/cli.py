@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import typer
 
 from aquen import service
@@ -12,17 +14,23 @@ content_app = typer.Typer(help="Manage content items", no_args_is_help=True)
 app.add_typer(content_app, name="content")
 
 
-def _ready_engine():
+@contextmanager
+def _session_scope():
+    """Open a ready DB session and dispose the engine when done."""
     engine = make_engine()
     init_db(engine)
-    return engine
+    try:
+        with get_session(engine) as sess:
+            yield sess
+    finally:
+        engine.dispose()
 
 
 @app.command()
 def init() -> None:
     """Initialize the AQUEN database."""
-    make_engine()  # validates the configured URL
-    engine = _ready_engine()
+    engine = make_engine()
+    init_db(engine)
     typer.echo(f"Initialized DB at {get_settings().db_path}")
     engine.dispose()
 
@@ -34,8 +42,7 @@ def content_add(
     hook: str = typer.Option(None, help="Hook archetype tag"),
     source: str = typer.Option(None, help="Source-of-inspiration URL"),
 ) -> None:
-    engine = _ready_engine()
-    with get_session(engine) as sess:
+    with _session_scope() as sess:
         item = service.add_content(
             sess,
             title=title,
@@ -50,8 +57,7 @@ def content_add(
 def content_list(
     state: str = typer.Option(None, help="Filter by content state"),
 ) -> None:
-    engine = _ready_engine()
-    with get_session(engine) as sess:
+    with _session_scope() as sess:
         st = ContentState(state) if state else None
         for item in service.list_content(sess, state=st):
             typer.echo(
@@ -64,8 +70,7 @@ def content_advance(
     item_id: int,
     to: str = typer.Option(None, help="Explicit target state (default: next)"),
 ) -> None:
-    engine = _ready_engine()
-    with get_session(engine) as sess:
+    with _session_scope() as sess:
         tgt = ContentState(to) if to else None
         item = service.advance_content(sess, item_id, target=tgt)
         typer.echo(f"#{item.id} -> {item.state.value}")

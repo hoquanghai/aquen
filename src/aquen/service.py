@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlmodel import Session, select
 
-from aquen.models import ContentItem
+from aquen.models import ContentItem, utcnow
 from aquen.states import (
     ContentState,
     InvalidTransition,
@@ -53,6 +53,7 @@ def advance_content(
         )
 
     item.state = tgt
+    item.updated_at = utcnow()
     session.add(item)
     session.commit()
     session.refresh(item)

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from aquen import service
@@ -37,3 +39,15 @@ def test_advance_invalid_target_raises(session):
 def test_advance_missing_item_raises(session):
     with pytest.raises(ValueError):
         service.advance_content(session, 999)
+
+
+def test_advance_refreshes_updated_at(session, monkeypatch):
+    item = service.add_content(session, title="A", pillar="derma_decode")
+    created = item.created_at
+
+    fixed = datetime(2999, 1, 1)
+    monkeypatch.setattr(service, "utcnow", lambda: fixed)
+
+    advanced = service.advance_content(session, item.id)
+    assert advanced.updated_at == fixed
+    assert advanced.created_at == created
