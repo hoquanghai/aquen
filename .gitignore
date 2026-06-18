@@ -22,6 +22,9 @@ assets/renders/
 *.sqlite
 *.db
 
+# Exported post packs (manual-upload artifacts)
+exports/
+
 # OS
 Thumbs.db
 .DS_Store

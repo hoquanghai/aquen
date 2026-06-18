@@ -12,7 +12,7 @@ for _stream in (sys.stdout, sys.stderr):
 
 import typer
 
-from aquen import compliance, generation, research, service
+from aquen import compliance, generation, publish, research, service
 from aquen.adapters import SampleMetaAdLibraryClient
 from aquen.analysis import OriginalityError
 from aquen.config import get_settings
@@ -34,6 +34,9 @@ app.add_typer(gen_app, name="gen")
 
 compliance_app = typer.Typer(help="Run and inspect the compliance gate", no_args_is_help=True)
 app.add_typer(compliance_app, name="compliance")
+
+publish_app = typer.Typer(help="Export manual-upload post packs", no_args_is_help=True)
+app.add_typer(publish_app, name="publish")
 
 
 @contextmanager
@@ -278,6 +281,20 @@ def compliance_log(item_id: int) -> None:
     with _session_scope() as sess:
         for r in compliance.list_checks(sess, item_id):
             typer.echo(f"#{r.id} [{'PASS' if r.passed else 'FAIL'}] {r.check}")
+
+
+@publish_app.command("pack")
+def publish_pack(
+    item_id: int,
+    out: str = typer.Option(None, help="Output directory (defaults to AQUEN_EXPORT_DIR)"),
+) -> None:
+    with _session_scope() as sess:
+        try:
+            pack_dir = publish.export_pack(sess, item_id, out_dir=out)
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        typer.echo(f"Exported post pack to {pack_dir}")
 
 
 if __name__ == "__main__":
