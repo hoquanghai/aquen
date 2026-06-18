@@ -103,3 +103,14 @@ class CalendarSlot(SQLModel, table=True):
     note: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+class Prompt(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    category: str  # avatar | hands_only | texture | grwm | explainer | voiceover
+    kind: str = "image"  # image | video | audio
+    template: str
+    version: int = 1
+    notes: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
