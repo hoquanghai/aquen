@@ -39,6 +39,16 @@ Vietnamese woman) generated on 2026-06-03; we trained a reusable Higgsfield **So
 - First clean educator set (2026-06-18): `f8c2253d` (talking), `2ee2fc4f` (headshot),
   `e582cad1` (derma-decode point-to-cheek), `3be3c6df` (explaining, shelf bg).
 
+## Video pipeline (image → video)
+- Animate a clean still with `generate_video` `model: "minimax_hailuo"` (Hailuo 2.3, natural
+  facial emotion), 9:16, 6s, `medias:[{role:"start_image", value:<image_job_id>}]` + a motion
+  prompt. ~6 credits/clip. Face identity is inherited from the start still.
+- First sample reel (2026-06-18, silent motion — NO voiceover/lip-sync yet):
+  `fd04fe45` derma-decode talking (from `3be3c6df`), `5af8472a` myth-bust talking
+  (from `f8c2253d`), `cdc50fb0` hands-only ASMR (from hands still `0cc1da9c`).
+- NEXT production layer (not done yet): TTS narration + lip-sync + on-screen captions (with
+  the FTC + AI disclosures) + BGM. That's the toolkit/hyperframes step, not raw Higgsfield.
+
 ## Brand alignment & guardrails
 - Render Mira in AQUEN skincare-educator contexts: clean aqua/white palette, dewy skin with
   REAL texture (pores, light freckles), warm/approachable, educator settings — keep identity
