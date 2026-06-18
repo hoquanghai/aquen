@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlmodel import Session, select
 
+from aquen import compliance
 from aquen.models import ContentItem, utcnow
 from aquen.states import (
     ContentState,
@@ -51,6 +52,10 @@ def advance_content(
         raise InvalidTransition(
             f"cannot move content {item_id} from {item.state.value} to {tgt.value}"
         )
+
+    # Compliance gate: a content item cannot reach `ready` until every check passes.
+    if tgt == ContentState.READY:
+        compliance.assert_compliant(session, item_id)
 
     item.state = tgt
     item.updated_at = utcnow()

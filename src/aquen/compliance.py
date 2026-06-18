@@ -3,7 +3,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from aquen.models import ContentItem
+from sqlmodel import Session, select
+
+from aquen.models import ComplianceCheck, ContentItem
 
 # Mira is a synthetic performer, so an AI disclosure is required on every post.
 AI_DISCLOSURE_MARKERS = [
@@ -141,3 +143,45 @@ def evaluate(item: ContentItem) -> list[CheckResult]:
         check_no_prohibited_claims(item.caption, item.script),
         check_substantiation(item.caption, item.script, item.substantiation_url),
     ]
+
+
+class ComplianceError(Exception):
+    pass
+
+
+def record_checks(session: Session, item_id: int) -> list[ComplianceCheck]:
+    """Run the gate on a content item and persist one ComplianceCheck row per check."""
+    item = session.get(ContentItem, item_id)
+    if item is None:
+        raise ValueError(f"content item {item_id} not found")
+    rows = [
+        ComplianceCheck(
+            content_item_id=item_id, check=r.name, passed=r.passed, detail=r.detail
+        )
+        for r in evaluate(item)
+    ]
+    for row in rows:
+        session.add(row)
+    session.commit()
+    for row in rows:
+        session.refresh(row)
+    return rows
+
+
+def assert_compliant(session: Session, item_id: int) -> list[ComplianceCheck]:
+    """Record the checks; raise ComplianceError listing every failure if any check fails."""
+    rows = record_checks(session, item_id)
+    failed = [r for r in rows if not r.passed]
+    if failed:
+        summary = "; ".join(f"{r.check}: {r.detail}" for r in failed)
+        raise ComplianceError(f"content {item_id} is not ready — {summary}")
+    return rows
+
+
+def list_checks(session: Session, item_id: int) -> list[ComplianceCheck]:
+    stmt = (
+        select(ComplianceCheck)
+        .where(ComplianceCheck.content_item_id == item_id)
+        .order_by(ComplianceCheck.id)
+    )
+    return list(session.exec(stmt))
