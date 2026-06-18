@@ -22,6 +22,23 @@ Vietnamese woman) generated on 2026-06-03; we trained a reusable Higgsfield **So
   need Elements).
 - Check status: `show_characters(action="status", soul_id="83c0591d-...")`.
 
+## Clean still-image production pipeline (IMPORTANT)
+- **Do NOT use `soul_2` for finished stills.** Its "General" style reliably hallucinates a
+  fake phone / Instagram UI chrome + a thumbnail filmstrip + gibberish text, and ignores
+  "no text/UI" negatives. (Soul `soul_2`+soul_id is still fine for the identity reference and
+  for `soul_cinema_studio` video.)
+- **Use a reusable Element + Nano Banana for clean photos.** Element **`Mira-1`**
+  (element_id `1972c3b9-1f3f-49fb-bcf0-104c7b171a23`, built from the clean soul render
+  `c6c2ddd4`). Generate with `generate_image` `model: "nano_banana_2"` (resolves to Nano
+  Banana), embedding `<<<1972c3b9-1f3f-49fb-bcf0-104c7b171a23>>>` in the prompt. Output is
+  clean, photographic, single-frame, identity-faithful.
+- **Prompt recipe:** describe a plain candid photo ("a clean realistic photograph of
+  <<<id>>> …, one person, one frame"); AVOID trigger words "beauty-channel / short-form
+  video / editorial / brand headshot"; end with "no text, no captions, no phone or app
+  interface, no social-media UI, no logos, no watermark."
+- First clean educator set (2026-06-18): `f8c2253d` (talking), `2ee2fc4f` (headshot),
+  `e582cad1` (derma-decode point-to-cheek), `3be3c6df` (explaining, shelf bg).
+
 ## Brand alignment & guardrails
 - Render Mira in AQUEN skincare-educator contexts: clean aqua/white palette, dewy skin with
   REAL texture (pores, light freckles), warm/approachable, educator settings — keep identity
