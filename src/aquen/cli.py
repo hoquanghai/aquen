@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from datetime import datetime
 import sys
 
 # Force UTF-8 console output so non-ASCII copy (em-dashes, Japanese, etc.) never crashes
@@ -12,12 +13,13 @@ for _stream in (sys.stdout, sys.stderr):
 
 import typer
 
-from aquen import compliance, generation, publish, research, service
+from aquen import compliance, generation, publish, research, scheduling, service
 from aquen.adapters import SampleMetaAdLibraryClient
 from aquen.analysis import OriginalityError
 from aquen.config import get_settings
 from aquen.db import get_session, init_db, make_engine
 from aquen.higgsfield import FakeHiggsfieldClient
+from aquen.models import utcnow
 from aquen.states import ContentState
 
 app = typer.Typer(help="AQUEN content-ops toolkit", no_args_is_help=True)
@@ -37,6 +39,9 @@ app.add_typer(compliance_app, name="compliance")
 
 publish_app = typer.Typer(help="Export manual-upload post packs", no_args_is_help=True)
 app.add_typer(publish_app, name="publish")
+
+calendar_app = typer.Typer(help="Schedule content across the posting calendar", no_args_is_help=True)
+app.add_typer(calendar_app, name="calendar")
 
 
 @contextmanager
@@ -295,6 +300,98 @@ def publish_pack(
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)
         typer.echo(f"Exported post pack to {pack_dir}")
+
+
+def _parse_dt(value: str) -> datetime:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        typer.echo(f"invalid datetime '{value}' (use ISO, e.g. 2026-07-01T13:00)", err=True)
+        raise typer.Exit(1)
+
+
+def _slot_line(s) -> str:
+    audio = f" audio={s.trending_audio}" if s.trending_audio else ""
+    return (
+        f"#{s.id} {s.scheduled_for:%Y-%m-%d %H:%M} [{s.window}] {s.lane} "
+        f"content=#{s.content_item_id}{audio}"
+    )
+
+
+@calendar_app.command("schedule")
+def calendar_schedule(
+    content_id: int,
+    when: str,
+    lane: str = typer.Option(None, help="Lane (defaults to the content item's pillar)"),
+    audio: str = typer.Option(None, help="Trending audio id/name"),
+    audio_ttl: int = typer.Option(None, help="Audio shelf-life in hours"),
+    note: str = typer.Option(None, help="Optional note"),
+) -> None:
+    dt = _parse_dt(when)
+    with _session_scope() as sess:
+        try:
+            slot = scheduling.schedule_content(
+                sess, content_id, dt, lane=lane, trending_audio=audio,
+                audio_ttl_hours=audio_ttl, note=note,
+            )
+        except (ValueError, scheduling.SchedulingError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        typer.echo(_slot_line(slot))
+
+
+@calendar_app.command("list")
+def calendar_list(
+    lane: str = typer.Option(None, help="Filter by lane"),
+) -> None:
+    with _session_scope() as sess:
+        for s in scheduling.list_calendar(sess, lane=lane):
+            typer.echo(_slot_line(s))
+
+
+@calendar_app.command("reschedule")
+def calendar_reschedule(slot_id: int, when: str) -> None:
+    dt = _parse_dt(when)
+    with _session_scope() as sess:
+        try:
+            slot = scheduling.reschedule_content(sess, slot_id, dt)
+        except (ValueError, scheduling.SchedulingError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        typer.echo(_slot_line(slot))
+
+
+@calendar_app.command("unschedule")
+def calendar_unschedule(slot_id: int) -> None:
+    with _session_scope() as sess:
+        try:
+            scheduling.unschedule(sess, slot_id)
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        typer.echo(f"unscheduled slot #{slot_id}")
+
+
+@calendar_app.command("upcoming")
+def calendar_upcoming(
+    hours: int = typer.Option(None, help="Only slots within the next N hours"),
+) -> None:
+    with _session_scope() as sess:
+        slots = scheduling.upcoming(sess, utcnow(), within_hours=hours)
+        if not slots:
+            typer.echo("no upcoming slots")
+        for s in slots:
+            typer.echo(_slot_line(s))
+
+
+@calendar_app.command("audio-check")
+def calendar_audio_check() -> None:
+    with _session_scope() as sess:
+        slots = scheduling.expiring_audio(sess, utcnow())
+        if not slots:
+            typer.echo("no expired trending audio")
+        for s in slots:
+            typer.echo(f"#{s.id} audio '{s.trending_audio}' expired (slot {s.scheduled_for:%Y-%m-%d %H:%M})")
 
 
 if __name__ == "__main__":
