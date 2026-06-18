@@ -13,7 +13,7 @@ for _stream in (sys.stdout, sys.stderr):
 
 import typer
 
-from aquen import compliance, generation, publish, research, scheduling, service
+from aquen import compliance, generation, prompts, publish, research, scheduling, service
 from aquen.adapters import SampleMetaAdLibraryClient
 from aquen.analysis import OriginalityError
 from aquen.config import get_settings
@@ -42,6 +42,9 @@ app.add_typer(publish_app, name="publish")
 
 calendar_app = typer.Typer(help="Schedule content across the posting calendar", no_args_is_help=True)
 app.add_typer(calendar_app, name="calendar")
+
+prompt_app = typer.Typer(help="Versioned Higgsfield prompt library", no_args_is_help=True)
+app.add_typer(prompt_app, name="prompt")
 
 
 @contextmanager
@@ -392,6 +395,78 @@ def calendar_audio_check() -> None:
             typer.echo("no expired trending audio")
         for s in slots:
             typer.echo(f"#{s.id} audio '{s.trending_audio}' expired (slot {s.scheduled_for:%Y-%m-%d %H:%M})")
+
+
+@prompt_app.command("add")
+def prompt_add(
+    name: str,
+    category: str,
+    template: str,
+    kind: str = typer.Option("image", help="image | video | audio"),
+    notes: str = typer.Option(None, help="Optional note"),
+) -> None:
+    with _session_scope() as sess:
+        try:
+            p = prompts.add_prompt(sess, name, category, template, kind=kind, notes=notes)
+        except prompts.PromptError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        typer.echo(f"{p.name} v{p.version} [{p.category}/{p.kind}]")
+
+
+@prompt_app.command("list")
+def prompt_list(
+    category: str = typer.Option(None, help="Filter by category"),
+) -> None:
+    with _session_scope() as sess:
+        for p in prompts.list_prompts(sess, category=category):
+            typer.echo(f"{p.name} v{p.version} [{p.category}/{p.kind}]")
+
+
+@prompt_app.command("versions")
+def prompt_versions_cmd(name: str) -> None:
+    with _session_scope() as sess:
+        for p in prompts.prompt_versions(sess, name):
+            typer.echo(f"{p.name} v{p.version} [{p.category}/{p.kind}]")
+
+
+@prompt_app.command("show")
+def prompt_show(
+    name: str,
+    version: int = typer.Option(None, help="Specific version (default: latest)"),
+) -> None:
+    with _session_scope() as sess:
+        try:
+            p = prompts.get_prompt(sess, name, version=version)
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        typer.echo(f"{p.name} v{p.version} [{p.category}/{p.kind}]")
+        if p.notes:
+            typer.echo(f"# {p.notes}")
+        typer.echo(p.template)
+
+
+@prompt_app.command("render")
+def prompt_render(
+    name: str,
+    var: list[str] = typer.Option(None, "--var", help="Template variable as k=v (repeatable)"),
+    version: int = typer.Option(None, help="Specific version (default: latest)"),
+) -> None:
+    variables: dict[str, str] = {}
+    for item in var or []:
+        if "=" not in item:
+            typer.echo(f"invalid --var '{item}' (use k=v)", err=True)
+            raise typer.Exit(1)
+        key, value = item.split("=", 1)
+        variables[key] = value
+    with _session_scope() as sess:
+        try:
+            text = prompts.render_prompt(sess, name, variables, version=version)
+        except (ValueError, prompts.PromptError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        typer.echo(text)
 
 
 if __name__ == "__main__":
