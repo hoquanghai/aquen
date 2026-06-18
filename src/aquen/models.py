@@ -29,6 +29,7 @@ class ContentItem(SQLModel, table=True):
     state: ContentState = Field(default=ContentState.IDEA)
     source_inspiration_url: str | None = None
     script: str | None = None
+    originality_note: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
 

@@ -32,6 +32,8 @@ class OriginalityError(Exception):
 
 def classify_archetype(ad_text: str) -> str:
     t = ad_text.lower()
+    # First match wins; the order encodes precedence:
+    # myth_bust > listicle > transformation > authority > curiosity.
     if any(k in t for k in ["myth", "lie", "stop believing", "don't", "do not"]):
         return "myth_bust"
     if re.search(r"\b\d+\s+(ways|steps|things|tips|swaps|reasons)\b", t):

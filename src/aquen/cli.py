@@ -1,6 +1,14 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import sys
+
+# Force UTF-8 console output so non-ASCII copy (em-dashes, Japanese, etc.) never crashes
+# on a legacy Windows codepage (e.g. cp932). No-op on streams without reconfigure().
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
 
 import typer
 
@@ -90,7 +98,11 @@ def competitor_add(
     note: str = typer.Option(None, help="Optional note"),
 ) -> None:
     with _session_scope() as sess:
-        c = research.add_competitor(sess, handle, platform=platform, note=note)
+        try:
+            c = research.add_competitor(sess, handle, platform=platform, note=note)
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
         typer.echo(f"#{c.id} {c.handle} ({c.platform})")
 
 

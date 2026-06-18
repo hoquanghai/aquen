@@ -78,3 +78,34 @@ def test_ideate_blocks_plagiarised_script(session):
 def test_ideate_missing_hook_raises(session):
     with pytest.raises(ValueError):
         research.ideate(session, 999, pillar="derma_decode", script="hi")
+
+
+def test_run_research_dedupes_per_competitor_not_globally(session):
+    research.add_competitor(session, "a")
+    research.add_competitor(session, "b")
+    rec = AdRecord("SAME", "P", "Dermatologist tested barrier serum.")
+    client = FakeMetaAdLibraryClient({"a": [rec], "b": [rec]})
+    counts = research.run_research(session, client)
+    assert counts["ads"] == 2  # one observation per competitor, not globally deduped
+
+
+def test_add_competitor_duplicate_raises(session):
+    research.add_competitor(session, "dup")
+    with pytest.raises(ValueError):
+        research.add_competitor(session, "dup")
+
+
+def test_ideate_records_originality_note(session):
+    research.add_competitor(session, "rivalskin")
+    client = FakeMetaAdLibraryClient(
+        {"rivalskin": [AdRecord("AD1", "Rival", "The one niacinamide step everyone skips.")]}
+    )
+    research.run_research(session, client)
+    hook = research.list_hooks(session)[0]
+    item = research.ideate(
+        session,
+        hook.id,
+        pillar="derma_decode",
+        script="A calm, simple barrier-first routine beats chasing every new trend.",
+    )
+    assert item.originality_note == "original"
