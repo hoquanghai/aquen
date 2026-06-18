@@ -12,7 +12,7 @@ for _stream in (sys.stdout, sys.stderr):
 
 import typer
 
-from aquen import generation, research, service
+from aquen import compliance, generation, research, service
 from aquen.adapters import SampleMetaAdLibraryClient
 from aquen.analysis import OriginalityError
 from aquen.config import get_settings
@@ -31,6 +31,9 @@ app.add_typer(hooks_app, name="hooks")
 
 gen_app = typer.Typer(help="Generate and screen Higgsfield creative", no_args_is_help=True)
 app.add_typer(gen_app, name="gen")
+
+compliance_app = typer.Typer(help="Run and inspect the compliance gate", no_args_is_help=True)
+app.add_typer(compliance_app, name="compliance")
 
 
 @contextmanager
@@ -91,7 +94,11 @@ def content_advance(
 ) -> None:
     with _session_scope() as sess:
         tgt = ContentState(to) if to else None
-        item = service.advance_content(sess, item_id, target=tgt)
+        try:
+            item = service.advance_content(sess, item_id, target=tgt)
+        except compliance.ComplianceError as exc:
+            typer.echo(f"Blocked: {exc}", err=True)
+            raise typer.Exit(1)
         typer.echo(f"#{item.id} -> {item.state.value}")
 
 
@@ -227,6 +234,50 @@ def gen_screen(
             raise typer.Exit(1)
         verdict = "PASS" if g.passed else "FAIL"
         typer.echo(f"#{g.id} score={g.virality_score} -> {verdict}")
+
+
+@content_app.command("set")
+def content_set(
+    item_id: int,
+    caption: str = typer.Option(None, help="Post caption (disclosures baked in)"),
+    sponsored: bool = typer.Option(None, "--sponsored/--not-sponsored", help="Mark as a sponsored post"),
+    ai_label: bool = typer.Option(None, "--ai-label/--no-ai-label", help="Confirm the persistent on-content AI label"),
+    substantiation: str = typer.Option(None, help="Substantiation source URL for skincare claims"),
+) -> None:
+    with _session_scope() as sess:
+        item = service.set_content_fields(
+            sess,
+            item_id,
+            caption=caption,
+            is_sponsored=sponsored,
+            ai_label_on_content=ai_label,
+            substantiation_url=substantiation,
+        )
+        typer.echo(
+            f"#{item.id} caption={'set' if item.caption else 'none'} "
+            f"sponsored={item.is_sponsored} ai_label={item.ai_label_on_content}"
+        )
+
+
+@compliance_app.command("check")
+def compliance_check(item_id: int) -> None:
+    with _session_scope() as sess:
+        try:
+            rows = compliance.record_checks(sess, item_id)
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        for r in rows:
+            typer.echo(f"[{'PASS' if r.passed else 'FAIL'}] {r.check}: {r.detail}")
+        if all(r.passed for r in rows):
+            typer.echo("ALL CHECKS PASS")
+
+
+@compliance_app.command("log")
+def compliance_log(item_id: int) -> None:
+    with _session_scope() as sess:
+        for r in compliance.list_checks(sess, item_id):
+            typer.echo(f"#{r.id} [{'PASS' if r.passed else 'FAIL'}] {r.check}")
 
 
 if __name__ == "__main__":

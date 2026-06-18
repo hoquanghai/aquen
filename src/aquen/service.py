@@ -63,3 +63,31 @@ def advance_content(
     session.commit()
     session.refresh(item)
     return item
+
+
+def set_content_fields(
+    session: Session,
+    item_id: int,
+    *,
+    caption: str | None = None,
+    is_sponsored: bool | None = None,
+    ai_label_on_content: bool | None = None,
+    substantiation_url: str | None = None,
+) -> ContentItem:
+    """Update the compliance-relevant fields on a content item. Only non-None args change."""
+    item = session.get(ContentItem, item_id)
+    if item is None:
+        raise ValueError(f"content item {item_id} not found")
+    if caption is not None:
+        item.caption = caption
+    if is_sponsored is not None:
+        item.is_sponsored = is_sponsored
+    if ai_label_on_content is not None:
+        item.ai_label_on_content = ai_label_on_content
+    if substantiation_url is not None:
+        item.substantiation_url = substantiation_url
+    item.updated_at = utcnow()
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    return item
