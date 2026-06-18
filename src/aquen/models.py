@@ -90,3 +90,16 @@ class ComplianceCheck(SQLModel, table=True):
     passed: bool
     detail: str
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class CalendarSlot(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    content_item_id: int = Field(index=True)
+    scheduled_for: datetime = Field(index=True)
+    lane: str
+    window: str  # midday | evening
+    trending_audio: str | None = None
+    audio_expires_at: datetime | None = None
+    note: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
