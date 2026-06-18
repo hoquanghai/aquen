@@ -29,3 +29,18 @@ def test_gen_video_refresh_screen(tmp_path):
     screened = runner.invoke(app, ["gen", "screen", "1"], env=env)
     assert screened.exit_code == 0
     assert "score" in screened.stdout.lower()
+
+
+def test_gen_refresh_unknown_id_errors(tmp_path):
+    env = _env(tmp_path)
+    res = runner.invoke(app, ["gen", "refresh", "999"], env=env)
+    assert res.exit_code == 1
+    assert "not found" in res.output.lower()
+
+
+def test_gen_screen_pending_errors(tmp_path):
+    env = _env(tmp_path)
+    runner.invoke(app, ["gen", "video", "clip"], env=env)  # pending, never refreshed
+    res = runner.invoke(app, ["gen", "screen", "1"], env=env)
+    assert res.exit_code == 1
+    assert "completed" in res.output.lower()

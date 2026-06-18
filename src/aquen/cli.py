@@ -195,7 +195,11 @@ def gen_video(
 def gen_refresh(generation_id: int) -> None:
     client = _higgsfield_client()
     with _session_scope() as sess:
-        g = generation.refresh_generation(sess, client, generation_id)
+        try:
+            g = generation.refresh_generation(sess, client, generation_id)
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
         typer.echo(f"#{g.id} [{g.status}] {g.result_url or ''}")
 
 
@@ -216,6 +220,14 @@ def gen_screen(
 ) -> None:
     client = _higgsfield_client()
     with _session_scope() as sess:
-        g = generation.screen_generation(sess, client, generation_id, threshold=threshold)
+        try:
+            g = generation.screen_generation(sess, client, generation_id, threshold=threshold)
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
         verdict = "PASS" if g.passed else "FAIL"
         typer.echo(f"#{g.id} score={g.virality_score} -> {verdict}")
+
+
+if __name__ == "__main__":
+    app()
