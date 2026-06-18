@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     mira_soul_id: str = "83c0591d-223f-461d-b4f2-0040fa029b8b"
     mira_element_id: str = "1972c3b9-1f3f-49fb-bcf0-104c7b171a23"
     virality_threshold: float = 0.6
+    export_dir: Path = Path("exports")
 
 
 def get_settings() -> Settings:

@@ -30,6 +30,11 @@ class ContentItem(SQLModel, table=True):
     source_inspiration_url: str | None = None
     script: str | None = None
     originality_note: str | None = None
+    # Compliance inputs (validated by the compliance gate before reaching `ready`).
+    caption: str | None = None
+    is_sponsored: bool = False
+    ai_label_on_content: bool = False
+    substantiation_url: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
 
@@ -76,3 +81,12 @@ class Generation(SQLModel, table=True):
     passed: bool | None = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+class ComplianceCheck(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    content_item_id: int = Field(index=True)
+    check: str  # ai_disclosure | ai_label | commercial_disclosure | no_prohibited_claims | substantiation
+    passed: bool
+    detail: str
+    created_at: datetime = Field(default_factory=utcnow)
