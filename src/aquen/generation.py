@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlmodel import Session, select
 
+from aquen.config import get_settings
 from aquen.higgsfield import COMPLETED, HiggsfieldClient
 from aquen.models import Generation, utcnow
 
@@ -91,3 +92,29 @@ def list_generations(
     if content_item_id is not None:
         stmt = stmt.where(Generation.content_item_id == content_item_id)
     return list(session.exec(stmt))
+
+
+def screen_generation(
+    session: Session,
+    client: HiggsfieldClient,
+    generation_id: int,
+    threshold: float | None = None,
+) -> Generation:
+    """Run the virality pre-screen on a COMPLETED generation, store the score, and mark it
+    passed/failed against the threshold (defaults to the configured virality_threshold)."""
+    gen = session.get(Generation, generation_id)
+    if gen is None:
+        raise ValueError(f"generation {generation_id} not found")
+    if gen.status != COMPLETED:
+        raise ValueError(
+            f"generation {generation_id} is {gen.status}; can only screen a completed generation"
+        )
+    cutoff = threshold if threshold is not None else get_settings().virality_threshold
+    score = client.virality_score(gen.external_job_id)
+    gen.virality_score = score
+    gen.passed = score >= cutoff
+    gen.updated_at = utcnow()
+    session.add(gen)
+    session.commit()
+    session.refresh(gen)
+    return gen
