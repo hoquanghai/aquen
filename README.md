@@ -15,7 +15,7 @@ integration behind a swappable adapter so the whole pipeline runs offline and te
 
 ## Status
 
-The toolkit MVP is complete and green (**101 tests passing**). Built in four plans:
+The toolkit MVP is complete and green (**128 tests passing**). Built in five plans:
 
 | Plan | Module | Ships |
 |---|---|---|
@@ -23,11 +23,11 @@ The toolkit MVP is complete and green (**101 tests passing**). Built in four pla
 | 2 — Research + Ideation | hook swipe-file | `competitor`, `research`, `hooks`, `ideate` + anti-plagiarism gate |
 | 3 — Higgsfield + Virality | creative engine | `gen image/video/refresh/list/screen` + virality pre-screen |
 | 4 — Compliance + Publisher | the gate + export | `content set`, `compliance check/log`, `publish pack` |
+| 5 — Content Calendar | scheduling | `calendar schedule/list/reschedule/unschedule/upcoming/audio-check` |
 
 **Deferred** (Fakes/Samples ship now): the live `HttpHiggsfieldClient` and live
-`MetaAdLibraryClient` (token-backed); the FastAPI/HTMX dashboard; the Meta Ads module; and the
-calendar/scheduling layer. See each plan's "Subsequent plans" section in
-[`docs/superpowers/plans/`](docs/superpowers/plans/).
+`MetaAdLibraryClient` (token-backed); the FastAPI/HTMX dashboard; and the Meta Ads module. See
+each plan's "Subsequent plans" section in [`docs/superpowers/plans/`](docs/superpowers/plans/).
 
 ---
 
@@ -77,6 +77,10 @@ Requires **Python 3.11+**. Dependencies: Typer, SQLModel, pydantic-settings, htt
 # 6. Export the manual-upload post pack
 .\.venv\Scripts\aquen.exe publish pack 1 --out exports
 # -> exports\aquen-post-1\{caption.txt, post_pack.md}
+
+# 7. Book it into a posting-window slot (window derived from the time; 12–14h / 19–21h)
+.\.venv\Scripts\aquen.exe calendar schedule 1 2026-07-01T13:00 --audio trend-1 --audio-ttl 48
+.\.venv\Scripts\aquen.exe calendar list
 ```
 
 ---
@@ -117,6 +121,12 @@ cannot reach `ready` until every compliance check passes (see below).
 | `aquen compliance check <id>` | Run + record the compliance checks (does not advance) |
 | `aquen compliance log <id>` | Show the recorded compliance-check audit trail |
 | `aquen publish pack <id> [--out DIR]` | Export a manual-upload post pack for a `ready` item |
+| `aquen calendar schedule <content_id> <when> [--lane L] [--audio NAME] [--audio-ttl HOURS] [--note N]` | Book an item into a posting-window slot (window derived from `when`) |
+| `aquen calendar list [--lane L]` | List scheduled slots, ordered by time |
+| `aquen calendar reschedule <slot_id> <when>` | Move a slot to a new time |
+| `aquen calendar unschedule <slot_id>` | Remove a slot |
+| `aquen calendar upcoming [--hours H]` | Slots scheduled from now (optionally within N hours) |
+| `aquen calendar audio-check` | Slots whose trending-audio shelf-life has expired |
 
 ---
 
@@ -159,6 +169,7 @@ publish} → {models, states, analysis, adapters, higgsfield}` with `db`/`config
 | [`generation.py`](src/aquen/generation.py) | submit/refresh/list/screen generations + virality gate |
 | [`compliance.py`](src/aquen/compliance.py) | pure compliance checks + gate service + `ComplianceError` |
 | [`publish.py`](src/aquen/publish.py) | `export_pack` — write the manual-upload post-pack folder |
+| [`scheduling.py`](src/aquen/scheduling.py) | posting-window rules + calendar service (`schedule`/`reschedule`/`upcoming`/`expiring_audio`) |
 | [`cli.py`](src/aquen/cli.py) | Typer app; the only place that opens/disposes a DB engine |
 
 New modules follow the same shape: a pure-logic or service module first, then a thin Typer
