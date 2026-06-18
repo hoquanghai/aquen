@@ -212,7 +212,9 @@ TikTok** (API-restricted); a human-in-the-loop publisher exports a ready-to-post
 
 1. **Research module** — query Meta Ad Library for competitor ads; capture **public** trend
    & hashtag signals; structured "manual comment-mining" notes; output **hook ideas** into
-   the DB. *No scraping of follower/customer lists, no bots.*
+   the DB. Seeded by a **user-provided competitor watch-list** now, with an **auto-discovery**
+   mode (find skincare competitors via Ad Library + trends) designed in for later. *No
+   scraping of follower/customer lists, no bots.*
 2. **Ideation + Prompt library** — turn hooks into scripted content ideas tagged by pillar &
    hook archetype; a versioned library of Higgsfield prompts (avatar, hands-only, texture,
    GRWM, explainer, voiceover) for repeatable, on-brand generation.
@@ -259,6 +261,14 @@ brand + Mira → stand up the toolkit MVP (Research → Ideation → Higgsfield 
 gate → Compliance gate → Publisher export, on SQLite) → produce the Mira avatar + 3 sample
 videos end-to-end. Each phase gets its own plan via the writing-plans skill.
 
+**Scope of the first plan (locked with user 2026-06-18):**
+- **In:** brand/Mira foundation, the toolkit MVP modules above, **organic** content
+  production, **CLI-first** interface, research module **seeded by a user-provided
+  competitor watch-list** (auto-discovery designed-in but deferred).
+- **Out (later cycles):** the **Meta Ads / paid module** (organic + toolkit first), the
+  **web dashboard** (CLI first, web second), the AI skin-analysis quiz, and the own-SKU
+  launch.
+
 ---
 
 ## 7. KPIs
@@ -294,17 +304,19 @@ videos end-to-end. Each phase gets its own plan via the writing-plans skill.
 
 ---
 
-## 9. Open questions & assumptions
+## 9. Assumptions & resolved decisions
 
-- **A1 (assumption):** Higgsfield exposes the needed capabilities (character consistency,
-  image/video/audio gen, virality predictor) via API/MCP usable from a local Python process;
-  exact auth & endpoints verified at implementation time, with an MCP fallback.
-- **A2 (assumption):** Meta Ad Library API access (token) is available for competitor ad
-  research; otherwise the research module degrades to assisted-manual capture.
-- **Q1:** Do you have Meta/Facebook Business + ad account ready for the paid module, or is
-  that later? (Affects GĐ2 scope.)
-- **Q2:** Preferred dashboard depth for the MVP — CLI-only first, or CLI + minimal web board
-  from the start?
-- **Q3:** Any geographies to exclude, or any competitor brands you already want on the
-  watch-list?
+**Assumptions (verified at implementation time):**
+- **A1:** Higgsfield exposes the needed capabilities (character consistency, image/video/
+  audio gen, virality predictor) via API/MCP usable from a local Python process; exact auth
+  & endpoints verified at implementation time, with an MCP fallback.
+- **A2:** Meta Ad Library API access (token) is available for competitor ad research;
+  otherwise the research module degrades to assisted-manual capture.
+
+**Resolved with user (2026-06-18):**
+- **Paid / Meta Ads module → deferred.** First cycle is organic + toolkit + production.
+- **Interface → CLI first, web dashboard later.**
+- **Competitor watch-list → user provides a seed list now; auto-discovery designed-in,
+  deferred.** (User to paste competitor pages/handles when ready — non-blocking for planning.)
+- **Geography → global English (US/UK/SEA/AU), no exclusions specified.**
 ```
