@@ -15,7 +15,7 @@ integration behind a swappable adapter so the whole pipeline runs offline and te
 
 ## Status
 
-The toolkit MVP is complete and green (**128 tests passing**). Built in five plans:
+The toolkit MVP is complete and green (**151 tests passing**). Built in six plans:
 
 | Plan | Module | Ships |
 |---|---|---|
@@ -24,6 +24,7 @@ The toolkit MVP is complete and green (**128 tests passing**). Built in five pla
 | 3 — Higgsfield + Virality | creative engine | `gen image/video/refresh/list/screen` + virality pre-screen |
 | 4 — Compliance + Publisher | the gate + export | `content set`, `compliance check/log`, `publish pack` |
 | 5 — Content Calendar | scheduling | `calendar schedule/list/reschedule/unschedule/upcoming/audio-check` |
+| 6 — Prompt Library | versioned prompts | `prompt add/list/versions/show/render` |
 
 **Deferred** (Fakes/Samples ship now): the live `HttpHiggsfieldClient` and live
 `MetaAdLibraryClient` (token-backed); the FastAPI/HTMX dashboard; and the Meta Ads module. See
@@ -127,6 +128,11 @@ cannot reach `ready` until every compliance check passes (see below).
 | `aquen calendar unschedule <slot_id>` | Remove a slot |
 | `aquen calendar upcoming [--hours H]` | Slots scheduled from now (optionally within N hours) |
 | `aquen calendar audio-check` | Slots whose trending-audio shelf-life has expired |
+| `aquen prompt add <name> <category> <template> [--kind K] [--notes N]` | Store a prompt template (re-using a name bumps its version) |
+| `aquen prompt list [--category C]` | List the latest version of each prompt |
+| `aquen prompt versions <name>` | List every version of a prompt |
+| `aquen prompt show <name> [--version V]` | Print a prompt's template + metadata |
+| `aquen prompt render <name> [--var k=v ...] [--version V]` | Render a prompt with variables (pass the output to `gen`) |
 
 ---
 
@@ -170,6 +176,7 @@ publish} → {models, states, analysis, adapters, higgsfield}` with `db`/`config
 | [`compliance.py`](src/aquen/compliance.py) | pure compliance checks + gate service + `ComplianceError` |
 | [`publish.py`](src/aquen/publish.py) | `export_pack` — write the manual-upload post-pack folder |
 | [`scheduling.py`](src/aquen/scheduling.py) | posting-window rules + calendar service (`schedule`/`reschedule`/`upcoming`/`expiring_audio`) |
+| [`prompts.py`](src/aquen/prompts.py) | versioned prompt-template library + render logic + `PromptError` |
 | [`cli.py`](src/aquen/cli.py) | Typer app; the only place that opens/disposes a DB engine |
 
 New modules follow the same shape: a pure-logic or service module first, then a thin Typer
