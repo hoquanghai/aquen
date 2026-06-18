@@ -1,0 +1,28 @@
+[project]
+name = "aquen"
+version = "0.1.0"
+description = "AQUEN skincare content-ops toolkit"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12",
+    "sqlmodel>=0.0.22",
+    "pydantic-settings>=2.4",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+aquen = "aquen.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aquen"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
