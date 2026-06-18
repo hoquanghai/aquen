@@ -1,0 +1,27 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Assets / renders (large media)
+assets/renders/
+*.mp4
+*.mov
+*.png
+*.jpg
+!docs/**
+
+# DB
+*.sqlite
+*.db
+
+# OS
+Thumbs.db
+.DS_Store
