@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     db_path: Path = Path("aquen.sqlite")
     higgsfield_api_key: str = ""
     meta_ad_library_token: str = ""
+    # Locked Mira identity references (see docs/brand/mira-kol.md)
+    mira_soul_id: str = "83c0591d-223f-461d-b4f2-0040fa029b8b"
+    mira_element_id: str = "1972c3b9-1f3f-49fb-bcf0-104c7b171a23"
+    virality_threshold: float = 0.6
 
 
 def get_settings() -> Settings:

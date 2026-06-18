@@ -61,3 +61,18 @@ class Hook(SQLModel, table=True):
     source_ad_archive_id: str | None = None
     source_ad_text: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class Generation(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    content_item_id: int | None = Field(default=None, index=True)
+    kind: str  # "image" | "video" | "audio"
+    prompt: str
+    model: str
+    external_job_id: str = Field(index=True)
+    status: str = "pending"  # pending | completed | failed
+    result_url: str | None = None
+    virality_score: float | None = None
+    passed: bool | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
