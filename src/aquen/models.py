@@ -28,5 +28,36 @@ class ContentItem(SQLModel, table=True):
     # edges rather than matching the lowercase value in raw SQL.
     state: ContentState = Field(default=ContentState.IDEA)
     source_inspiration_url: str | None = None
+    script: str | None = None
+    originality_note: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+class Competitor(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    handle: str = Field(index=True, unique=True)
+    platform: str = "meta"
+    note: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class AdInsight(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    competitor_handle: str = Field(index=True)
+    ad_archive_id: str = Field(index=True)
+    ad_text: str
+    page_name: str | None = None
+    source_url: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class Hook(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    text: str
+    archetype: str
+    topic: str = "skincare"
+    source_inspiration_url: str | None = None
+    source_ad_archive_id: str | None = None
+    source_ad_text: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
