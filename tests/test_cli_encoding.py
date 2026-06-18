@@ -5,11 +5,15 @@ from pathlib import Path
 
 
 def _run(args, env):
+    # The child forces cp932 via PYTHONIOENCODING then reconfigures stdout to UTF-8, so the
+    # parent must decode the captured output as UTF-8 (decoding it as the cp932 host codec
+    # would raise in subprocess's reader thread even though the child exits cleanly).
     return subprocess.run(
         [sys.executable, "-c", "from aquen.cli import app; app()", *args],
         env=env,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
 
 
